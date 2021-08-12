@@ -25,72 +25,35 @@ func NewErrorSystem(system string) ErrorSystem {
 	return &httpErrorSystem{system}
 }
 
-func (sys httpErrorSystem) BadRequest(code int, message string) Error {
+func (sys httpErrorSystem) NewError(code int, status int, message string) Error {
 	err := &HttpError{}
-	err.System = sys.system
 	err.Code = code
-	err.StatusCode = http.StatusBadRequest
-	err.statusCode = err.StatusCode
+	err.Status = status
+	err.statusCode = err.Status
 	err.Message = err.System + "/" +
-		strconv.Itoa(err.StatusCode) + "/" +
-		strconv.Itoa(code) + "::" +
+		strconv.Itoa(err.Status) + "/" +
+		strconv.Itoa(err.Code) + "::" +
 		message
 
 	return err
+}
+
+func (sys httpErrorSystem) BadRequest(code int, message string) Error {
+	return sys.NewError(code, http.StatusBadRequest, message)
 }
 
 func (sys httpErrorSystem) InternalServerError(code int, message string) Error {
-	err := &HttpError{}
-	err.System = sys.system
-	err.Code = code
-	err.StatusCode = http.StatusInternalServerError
-	err.statusCode = err.StatusCode
-	err.Message = err.System + "/" +
-		strconv.Itoa(err.StatusCode) + "/" +
-		strconv.Itoa(code) + "::" +
-		message
-
-	return err
+	return sys.NewError(code, http.StatusInternalServerError, message)
 }
 
 func (sys httpErrorSystem) NotFound(code int, message string) Error {
-	err := &HttpError{}
-	err.System = sys.system
-	err.Code = code
-	err.StatusCode = http.StatusNotFound
-	err.statusCode = err.StatusCode
-	err.Message = err.System + "/" +
-		strconv.Itoa(err.StatusCode) + "/" +
-		strconv.Itoa(code) + "::" +
-		message
-
-	return err
+	return sys.NewError(code, http.StatusNotFound, message)
 }
 
 func (sys httpErrorSystem) Forbidden(code int, message string) Error {
-	err := &HttpError{}
-	err.System = sys.system
-	err.Code = code
-	err.StatusCode = http.StatusForbidden
-	err.statusCode = err.StatusCode
-	err.Message = err.System + "/" +
-		strconv.Itoa(err.StatusCode) + "/" +
-		strconv.Itoa(code) + "::" +
-		message
-
-	return err
+	return sys.NewError(code, http.StatusForbidden, message)
 }
 
 func (sys httpErrorSystem) Unauthorized(code int, message string) Error {
-	err := &HttpError{}
-	err.System = sys.system
-	err.Code = code
-	err.StatusCode = http.StatusUnauthorized
-	err.statusCode = err.StatusCode
-	err.Message = err.System + "/" +
-		strconv.Itoa(err.StatusCode) + "/" +
-		strconv.Itoa(code) + "::" +
-		message
-
-	return err
+	return sys.NewError(code, http.StatusUnauthorized, message)
 }

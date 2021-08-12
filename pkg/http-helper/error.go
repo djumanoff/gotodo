@@ -8,10 +8,10 @@ type Error interface {
 
 type HttpError struct {
 	response
-	StatusCode int    `json:"status"`
-	Code       int    `json:"code"`
-	System     string `json:"system"`
-	Message    string `json:"message"`
+	Status  int    `json:"status"`
+	Code    int    `json:"code"`
+	System  string `json:"system"`
+	Message string `json:"message"`
 }
 
 func (err HttpError) Error() string {
