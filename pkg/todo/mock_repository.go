@@ -12,8 +12,8 @@ func (repo *mockRepo) Update(upd *TodoUpdate) error {
 	return nil
 }
 
-func (repo *mockRepo) Create(todo *Todo) error {
-	return nil
+func (repo *mockRepo) Create(todo *Todo) (int64, error) {
+	return 0, nil
 }
 
 func (repo *mockRepo) FindAll(params *http_helper.ListParams) ([]*Todo, error) {

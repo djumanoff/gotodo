@@ -5,7 +5,7 @@ import http_helper "github.com/djumanoff/gotodo/pkg/http-helper"
 type Repository interface {
 	Update(upd *TodoUpdate) error
 
-	Create(todo *Todo) error
+	Create(todo *Todo) (int64, error)
 
 	FindAll(params *http_helper.ListParams) ([]*Todo, error)
 

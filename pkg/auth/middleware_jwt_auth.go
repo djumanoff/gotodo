@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"github.com/djumanoff/gotodo/pkg/http-helper"
 	"github.com/golang-jwt/jwt"
 	"net/http"
@@ -8,7 +9,7 @@ import (
 )
 
 type MiddlewareFactory interface {
-	JWT(handler http_helper.Handler) http_helper.Handler
+	JWTParser(handler http_helper.Handler) http_helper.Handler
 }
 
 type auth struct {
@@ -16,12 +17,12 @@ type auth struct {
 	errSys http_helper.ErrorSystem
 }
 
-func NewAuthMW(pubKey string, errSys http_helper.ErrorSystem) AuthMiddlewareFactory {
+func NewAuthMW(pubKey string, errSys http_helper.ErrorSystem) MiddlewareFactory {
 	return &auth{pubKey: pubKey, errSys: errSys}
 }
 
-func (auth *auth) JWT(handler http_helper.Handler) http_helper.Handler {
-	return func(r *http.Request) http_helper.Response {
+func (auth *auth) JWTParser(handler http_helper.Handler) http_helper.Handler {
+	return func(ctx context.Context, r *http.Request) http_helper.Response {
 		header := r.Header.Get("Authorization")
 		if header == "" {
 			return auth.errSys.Unauthorized(10, "Unauthorized.")
@@ -34,13 +35,14 @@ func (auth *auth) JWT(handler http_helper.Handler) http_helper.Handler {
 		if jwtToken == "" {
 			return auth.errSys.Unauthorized(12, "Unauthorized.")
 		}
-		tkn, err := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
-			return auth.pubKey, nil
+		claims := &JWTClaims{}
+		_, err := jwt.ParseWithClaims(jwtToken, claims, func(token *jwt.Token) (interface{}, error) {
+			return []byte(auth.pubKey), nil
 		})
 		if err != nil {
-			return auth.errSys.Unauthorized(13, err.Error())
+			return auth.errSys.Forbidden(13, err.Error())
 		}
-
-		return handler(r)
+		ctx = context.WithValue(ctx, "claims", claims)
+		return handler(ctx, r)
 	}
 }

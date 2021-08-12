@@ -1,5 +1,5 @@
 package cqrses
 
 type Command interface {
-	Exec() ([]Event, interface{}, error)
+	Exec(svc interface{}) ([]Event, interface{}, error)
 }

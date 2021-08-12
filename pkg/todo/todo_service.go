@@ -1,7 +1,8 @@
 package todo
 
 type Service interface {
-	NewTodo(title string) (*Todo, error)
+	NewTodo(title string, body string) (*Todo, error)
+
 	Done(id int64) error
 }
 
