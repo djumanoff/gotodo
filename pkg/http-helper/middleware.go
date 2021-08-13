@@ -1,3 +1,7 @@
 package http_helper
 
-type HttpMiddlewareFactory struct{}
+import "github.com/didip/tollbooth/limiter"
+
+type HttpMiddlewareFactory struct {
+	RateLimitter *limiter.Limiter
+}

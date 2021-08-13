@@ -1,15 +1,13 @@
 package http_helper
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 )
 
 func (fac *HttpMiddlewareFactory) JSON(handler Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.Background()
-		resp := handler(ctx, r)
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		resp := handler(r)
 		data, err := json.Marshal(resp.Response())
 		if err != nil {
 			_, err = w.Write([]byte("{}"))
@@ -26,4 +24,5 @@ func (fac *HttpMiddlewareFactory) JSON(handler Handler) http.HandlerFunc {
 		}
 		w.WriteHeader(resp.StatusCode())
 	}
+	return fn
 }

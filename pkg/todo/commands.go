@@ -2,7 +2,7 @@ package todo
 
 import (
 	"github.com/djumanoff/gotodo/pkg/cqrses"
-	http_helper "github.com/djumanoff/gotodo/pkg/http-helper"
+	"github.com/djumanoff/gotodo/pkg/utils"
 )
 
 type CommandCreateTodo struct {
@@ -20,7 +20,8 @@ func (cmd *CommandCreateTodo) Exec(svc interface{}) ([]cqrses.Event, interface{}
 }
 
 type CommandGetTodos struct {
-	ListParams *http_helper.ListParams
+	Query      *TodoQuery
+	ListParams *utils.ListParams
 }
 
 func (cmd *CommandGetTodos) Exec(svc interface{}) ([]cqrses.Event, interface{}, error) {

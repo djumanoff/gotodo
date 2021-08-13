@@ -22,7 +22,7 @@ func NewAuthMW(pubKey string, errSys http_helper.ErrorSystem) MiddlewareFactory 
 }
 
 func (auth *auth) JWTParser(handler http_helper.Handler) http_helper.Handler {
-	return func(ctx context.Context, r *http.Request) http_helper.Response {
+	return func(r *http.Request) http_helper.Response {
 		header := r.Header.Get("Authorization")
 		if header == "" {
 			return auth.errSys.Unauthorized(10, "Unauthorized.")
@@ -42,7 +42,7 @@ func (auth *auth) JWTParser(handler http_helper.Handler) http_helper.Handler {
 		if err != nil {
 			return auth.errSys.Forbidden(13, err.Error())
 		}
-		ctx = context.WithValue(ctx, "claims", claims)
-		return handler(ctx, r)
+		ctx := context.WithValue(r.Context(), "claims", claims)
+		return handler(r.WithContext(ctx))
 	}
 }

@@ -1,6 +1,8 @@
 package todo
 
-import http_helper "github.com/djumanoff/gotodo/pkg/http-helper"
+import (
+	http_helper "github.com/djumanoff/gotodo/pkg/utils"
+)
 
 func NewMockRepo() Repository {
 	return &mockRepo{}
@@ -17,7 +19,7 @@ func (repo *mockRepo) Create(todo *Todo) (int64, error) {
 }
 
 func (repo *mockRepo) FindAll(params *http_helper.ListParams) ([]*Todo, error) {
-	todos := []*Todo{}
+	var todos []*Todo
 	return todos, nil
 }
 
@@ -26,5 +28,9 @@ func (repo *mockRepo) FindById(id int64) (*Todo, error) {
 }
 
 func (repo *mockRepo) Delete(id int64) error {
+	return nil
+}
+
+func (repo *mockRepo) Health() error {
 	return nil
 }

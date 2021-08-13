@@ -32,13 +32,12 @@ func (r *Router) Prefix(prefix string, router *Router) {
 	r.Mux.Mount(prefix, router.Mux)
 }
 
+func (r *Router) Healthers(healthers ...Healther) {
+	r.Mux.Get("/_health", healthHandler(healthers...))
+}
+
 func NewRouter(cfg Config) *Router {
 	r := &Router{Mux: chi.NewRouter(), Config: cfg}
-
-	healthUri := r.Config.HealthUri
-	if healthUri == "" {
-		healthUri = "/_health"
-	}
 
 	timeout := r.Config.Timeout
 	if timeout == 0 {

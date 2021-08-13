@@ -1,6 +1,8 @@
 package todo
 
-import http_helper "github.com/djumanoff/gotodo/pkg/http-helper"
+import (
+	http_helper "github.com/djumanoff/gotodo/pkg/utils"
+)
 
 type Repository interface {
 	Update(upd *TodoUpdate) error
@@ -12,4 +14,6 @@ type Repository interface {
 	FindById(id int64) (*Todo, error)
 
 	Delete(id int64) error
+
+	Health() error
 }

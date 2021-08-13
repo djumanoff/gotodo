@@ -14,8 +14,8 @@ import (
 // Config describes server configuration
 type Config struct {
 	Addr            string        `envconfig:"addr" mapstructure:"addr" default:":8080"`
-	ShutdownTimeout int           `envconfig:"shutdown_timeout" mapstructure:"shutdown_timeout" default:"20"`
-	GracefulTimeout int           `envconfig:"graceful_timeout" mapstructure:"graceful_timeout" default:"21"`
+	ShutdownTimeout time.Duration `envconfig:"shutdown_timeout" mapstructure:"shutdown_timeout" default:"20"`
+	GracefulTimeout time.Duration `envconfig:"graceful_timeout" mapstructure:"graceful_timeout" default:"21"`
 	HealthUri       string        `envconfig:"health_uri" mapstructure:"health_uri" default:"/_health"`
 	ApiVersion      string        `envconfig:"api_version" mapstructure:"api_version" default:"v1"`
 	Timeout         time.Duration `envconfig:"timeout" mapstructure:"timeout" default:"20"`
@@ -24,7 +24,7 @@ type Config struct {
 
 // Listen starts a http server on specified address and defines gateway routes
 // Server implements a graceful shutdown pattern for better handling of rolling k8s updates
-func Listen(cfg Config, router *Router) error {
+func Listen(cfg Config, router *Router, cleanUp func()) error {
 	valv := valve.New()
 	log := cfg.Logger.Logger
 
@@ -41,7 +41,7 @@ func Listen(cfg Config, router *Router) error {
 			// sig is a ^C, handle it
 			log.Info("Shutting down a http server...\n")
 
-			shutdown := time.Duration(cfg.ShutdownTimeout) * time.Second
+			shutdown := cfg.ShutdownTimeout
 
 			// first valv
 			if err := valv.Shutdown(shutdown); err != nil {
@@ -59,9 +59,12 @@ func Listen(cfg Config, router *Router) error {
 				return
 			}
 
+			// cleanUp before shutDown
+			cleanUp()
+
 			// verify, in worst case call cancel via defer
 			select {
-			case <-time.After(time.Duration(cfg.GracefulTimeout) * time.Second):
+			case <-time.After(cfg.GracefulTimeout):
 				log.Info("Not all connections are done")
 			case <-ctx.Done():
 

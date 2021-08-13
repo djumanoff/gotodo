@@ -1,7 +1,6 @@
 package todo
 
 import (
-	"context"
 	"encoding/json"
 	"github.com/djumanoff/gotodo/pkg/cqrses"
 	http_helper "github.com/djumanoff/gotodo/pkg/http-helper"
@@ -25,7 +24,7 @@ type httpHandlerFactory struct {
 }
 
 func (fac *httpHandlerFactory) CreateTodo() http_helper.Handler {
-	return func(ctx context.Context, r *http.Request) http_helper.Response {
+	return func(r *http.Request) http_helper.Response {
 		cmd := &CommandCreateTodo{}
 		d, err := ioutil.ReadAll(r.Body)
 		if err != nil {
@@ -44,7 +43,7 @@ func (fac *httpHandlerFactory) CreateTodo() http_helper.Handler {
 }
 
 func (fac *httpHandlerFactory) GetTodos() http_helper.Handler {
-	return func(ctx context.Context, r *http.Request) http_helper.Response {
+	return func(r *http.Request) http_helper.Response {
 		cmd := &CommandGetTodos{}
 		_, todos, err := fac.cmder.Exec(cmd)
 		if err != nil {

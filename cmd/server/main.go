@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/didip/tollbooth"
 	"github.com/djumanoff/gotodo/pkg/config"
 	"github.com/djumanoff/gotodo/pkg/cqrses"
 	hh "github.com/djumanoff/gotodo/pkg/http-helper"
@@ -9,37 +10,38 @@ import (
 	"github.com/urfave/cli/v2"
 	"log"
 	"os"
+	"time"
 )
 
 var (
-	flags = []cli.Flag{
-		&cli.StringFlag{
-			Name:    "config",
-			Aliases: []string{"c"},
-			Usage:   "Load configuration from .env file",
-			Value:   "",
-			EnvVars: []string{"CONFIG", "CFG"},
-		},
-		&cli.StringFlag{
-			Name:    "address",
-			Aliases: []string{"a"},
-			Usage:   "run http server on specified address",
-			Value:   "",
-			EnvVars: []string{"ADDRESS"},
-		},
-	}
-
+	// commands and flags of the cli
 	commands = []*cli.Command{
 		{
 			Name:    "server",
 			Aliases: []string{"run"},
 			Usage:   "run http server",
 			Action:  run,
-			Flags:   flags,
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:    "config",
+					Aliases: []string{"c"},
+					Usage:   "Load configuration from .env file",
+					Value:   "",
+					EnvVars: []string{"CONFIG", "CFG"},
+				},
+				&cli.StringFlag{
+					Name:    "address",
+					Aliases: []string{"a"},
+					Usage:   "run http server on specified address",
+					Value:   "",
+					EnvVars: []string{"ADDR"},
+				},
+			},
 		},
 	}
 )
 
+// initialize application
 func main() {
 	app := &cli.App{}
 	app.Name = "Todo Server"
@@ -51,27 +53,64 @@ func main() {
 	}
 }
 
+// Config struct for server command
 type Config struct {
 	Addr string `envconfig:"addr" mapstructure:"addr" default:":8080"`
 }
 
-func run(c *cli.Context) error {
-	cfg := &Config{}
+func (cfg *Config) load(c *cli.Context) {
+	// load config from file if config file provided
 	configPath := c.String("config")
 	if configPath != "" {
 		_ = config.LoadFromFile("", cfg, configPath)
 	}
+	// load config from command line arguments
+	if cfg.Addr == "" {
+		cfg.Addr = c.String("address")
+	}
+}
+
+// run func runs http server, returns error if configuration is invalid for some reason
+func run(c *cli.Context) error {
+	cfg := &Config{}
+
+	// init config
+	cfg.load(c)
+
 	lg := logger.New()
-	hhCfg := hh.Config{Addr: cfg.Addr, Logger: lg}
+
+	// init config for http server
+	hhCfg := hh.Config{
+		GracefulTimeout: 3 * time.Second,
+		ShutdownTimeout: 3 * time.Second,
+		Addr:            cfg.Addr,
+		Logger:          lg,
+	}
 	router := hh.NewRouter(hhCfg)
 
-	cmder := cqrses.NewCommandHandler(todo.NewService(todo.NewMockRepo()))
+	repo := todo.NewMockRepo()
+	cmder := cqrses.NewCommandHandler(todo.NewService(repo))
+
+	// init error system
 	errSys := hh.NewErrorSystem("TODO")
 
 	fac := todo.NewHttpHandlerFactory(cmder, errSys)
-	mw := hh.HttpMiddlewareFactory{}
+	mw := hh.HttpMiddlewareFactory{RateLimitter: tollbooth.NewLimiter(1, nil)}
 
+	// init global middleware
+	router.Mux.Use(mw.RateLimit)
+
+	// init routes
 	router.Mux.Get("/todos", mw.JSON(fac.GetTodos()))
 
-	return hh.Listen(hhCfg, router)
+	// init health checks
+	router.Healthers(repo)
+
+	// start http server with cleanup function
+	// to close db connections, files, queues etc.
+	return hh.Listen(hhCfg, router, func() {
+		lg.Logger.Info("cleanup func called")
+		time.Sleep(3 * time.Second)
+		lg.Logger.Info("cleanup finished")
+	})
 }
