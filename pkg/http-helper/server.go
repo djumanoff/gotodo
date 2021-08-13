@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/djumanoff/gotodo/pkg/logger"
 	"github.com/go-chi/valve"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,6 +20,7 @@ type Config struct {
 	HealthUri       string        `envconfig:"health_uri" mapstructure:"health_uri" default:"/_health"`
 	ApiVersion      string        `envconfig:"api_version" mapstructure:"api_version" default:"v1"`
 	Timeout         time.Duration `envconfig:"timeout" mapstructure:"timeout" default:"20"`
+	RateLimit       int64         `envconfig:"rate_limit" mapstructure:"rate_limit" default:"1"` // TODO: change in future :)
 	Logger          *logger.Log
 }
 
@@ -32,6 +34,8 @@ func Listen(cfg Config, router *Router, cleanUp func()) error {
 		Addr:    cfg.Addr,
 		Handler: router.Mux,
 	}
+
+	router.Mux.Handle("/_metrics", promhttp.Handler())
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)

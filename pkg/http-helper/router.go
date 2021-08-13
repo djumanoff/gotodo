@@ -1,6 +1,7 @@
 package http_helper
 
 import (
+	"github.com/didip/tollbooth"
 	"github.com/go-chi/chi"
 	chiMiddleware "github.com/go-chi/chi/middleware"
 	"time"
@@ -13,15 +14,6 @@ type Resource interface {
 type Router struct {
 	Mux    chi.Router
 	Config Config
-}
-
-//func NewRouter() *Router {
-//	return &Router{Mux: chi.NewRouter()}
-//}
-
-func NewApiRouter(apiVersion string) *Router {
-	r := &Router{Mux: chi.NewRouter()}
-	return r
 }
 
 func (r *Router) AddResource(pattern string, resource Resource) {
@@ -38,6 +30,7 @@ func (r *Router) Healthers(healthers ...Healther) {
 
 func NewRouter(cfg Config) *Router {
 	r := &Router{Mux: chi.NewRouter(), Config: cfg}
+	lmt := tollbooth.NewLimiter(float64(cfg.RateLimit), nil)
 
 	timeout := r.Config.Timeout
 	if timeout == 0 {
@@ -49,6 +42,8 @@ func NewRouter(cfg Config) *Router {
 	r.Mux.Use(chiMiddleware.StripSlashes)
 	r.Mux.Use(chiMiddleware.Recoverer)
 	r.Mux.Use(chiMiddleware.Timeout(timeout))
+	r.Mux.Use(prometheusMiddleware)
+	r.Mux.Use(rateLimitter(lmt))
 
 	return r
 }
