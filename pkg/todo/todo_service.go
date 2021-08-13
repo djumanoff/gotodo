@@ -4,6 +4,8 @@ type Service interface {
 	NewTodo(title string, body string) (*Todo, error)
 
 	Done(id int64) error
+
+	GetTodos() ([]*Todo, error)
 }
 
 func NewService(repo Repository) Service {
@@ -37,4 +39,8 @@ func (svc *defaultSvc) Done(id int64) error {
 		return err
 	}
 	return nil
+}
+
+func (svc *defaultSvc) GetTodos() ([]*Todo, error) {
+	return svc.repo.FindAll(nil)
 }

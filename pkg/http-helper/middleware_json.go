@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func (fac *HttpMiddlewareFactory) JSON(handler Handler) HttpHandler {
+func (fac *HttpMiddlewareFactory) JSON(handler Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.Background()
 		resp := handler(ctx, r)

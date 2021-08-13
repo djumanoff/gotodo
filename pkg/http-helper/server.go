@@ -24,7 +24,7 @@ type Config struct {
 
 // Listen starts a http server on specified address and defines gateway routes
 // Server implements a graceful shutdown pattern for better handling of rolling k8s updates
-func Listen(cfg Config, router *Router) {
+func Listen(cfg Config, router *Router) error {
 	valv := valve.New()
 	log := cfg.Logger.Logger
 
@@ -73,6 +73,8 @@ func Listen(cfg Config, router *Router) {
 
 	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 		log.Errorf("A server listener error: %v", err)
+		return err
 	}
 	log.Info("Server is down")
+	return nil
 }

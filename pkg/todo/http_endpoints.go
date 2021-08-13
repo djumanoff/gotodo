@@ -9,12 +9,22 @@ import (
 	"net/http"
 )
 
-type HttpEndpointFactory struct {
+type HttpHandlerFactory interface {
+	CreateTodo() http_helper.Handler
+
+	GetTodos() http_helper.Handler
+}
+
+func NewHttpHandlerFactory(cmder cqrses.CommandHandler, errSys http_helper.ErrorSystem) HttpHandlerFactory {
+	return &httpHandlerFactory{cmder, errSys}
+}
+
+type httpHandlerFactory struct {
 	cmder  cqrses.CommandHandler
 	errSys http_helper.ErrorSystem
 }
 
-func (fac *HttpEndpointFactory) CreateTodo() http_helper.Handler {
+func (fac *httpHandlerFactory) CreateTodo() http_helper.Handler {
 	return func(ctx context.Context, r *http.Request) http_helper.Response {
 		cmd := &CommandCreateTodo{}
 		d, err := ioutil.ReadAll(r.Body)
@@ -30,5 +40,16 @@ func (fac *HttpEndpointFactory) CreateTodo() http_helper.Handler {
 			return fac.errSys.BadRequest(30, err.Error())
 		}
 		return http_helper.Created(todo)
+	}
+}
+
+func (fac *httpHandlerFactory) GetTodos() http_helper.Handler {
+	return func(ctx context.Context, r *http.Request) http_helper.Response {
+		cmd := &CommandGetTodos{}
+		_, todos, err := fac.cmder.Exec(cmd)
+		if err != nil {
+			return fac.errSys.BadRequest(30, err.Error())
+		}
+		return http_helper.OK(todos)
 	}
 }

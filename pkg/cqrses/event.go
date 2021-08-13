@@ -1,6 +1,7 @@
 package cqrses
 
 import (
+	"encoding/json"
 	"github.com/google/uuid"
 	"time"
 )
@@ -47,5 +48,15 @@ func NewEvent(evt *EventData) Event {
 	if evt.ID == "" {
 		evt.ID = uuid.NewString()
 	}
+	return evt
+}
+
+func NewEventWithJson(name string, data interface{}) Event {
+	evt := &EventData{}
+	evt.Timestamp = time.Now()
+	evt.ID = uuid.NewString()
+	evt.Name = name
+	d, _ := json.Marshal(data)
+	evt.Data = string(d)
 	return evt
 }
