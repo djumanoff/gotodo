@@ -1,11 +1,15 @@
 package todo
 
+import "github.com/djumanoff/gotodo/pkg/utils"
+
 type Service interface {
 	NewTodo(title string, body string) (*Todo, error)
 
 	Done(id int64) error
 
-	GetTodos() ([]*Todo, error)
+	GetTodos(query *TodoQuery, params *utils.ListParams) ([]*Todo, error)
+
+	GetTodo(id int64) (*Todo, error)
 }
 
 func NewService(repo Repository) Service {
@@ -41,6 +45,10 @@ func (svc *defaultSvc) Done(id int64) error {
 	return nil
 }
 
-func (svc *defaultSvc) GetTodos() ([]*Todo, error) {
-	return svc.repo.FindAll(nil)
+func (svc *defaultSvc) GetTodos(query *TodoQuery, params *utils.ListParams) ([]*Todo, error) {
+	return svc.repo.FindAll(query, params)
+}
+
+func (svc *defaultSvc) GetTodo(id int64) (*Todo, error) {
+	return svc.repo.FindById(id)
 }

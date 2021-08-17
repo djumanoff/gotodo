@@ -1,7 +1,7 @@
 package todo
 
 import (
-	http_helper "github.com/djumanoff/gotodo/pkg/utils"
+	"github.com/djumanoff/gotodo/pkg/utils"
 )
 
 type Repository interface {
@@ -9,7 +9,7 @@ type Repository interface {
 
 	Create(todo *Todo) (int64, error)
 
-	FindAll(params *http_helper.ListParams) ([]*Todo, error)
+	FindAll(query *TodoQuery, params *utils.ListParams) ([]*Todo, error)
 
 	FindById(id int64) (*Todo, error)
 

@@ -10,7 +10,7 @@ type CommandCreateTodo struct {
 }
 
 func (cmd *CommandCreateTodo) Exec(svc interface{}) ([]cqrses.Event, interface{}, error) {
-	events := []cqrses.Event{}
+	var events []cqrses.Event
 	todo, err := svc.(Service).NewTodo(cmd.Title, cmd.Body)
 	if err != nil {
 		return nil, nil, err
@@ -25,6 +25,6 @@ type CommandGetTodos struct {
 }
 
 func (cmd *CommandGetTodos) Exec(svc interface{}) ([]cqrses.Event, interface{}, error) {
-	todo, err := svc.(Service).GetTodos()
+	todo, err := svc.(Service).GetTodos(cmd.Query, cmd.ListParams)
 	return nil, todo, err
 }

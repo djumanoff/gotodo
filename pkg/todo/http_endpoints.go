@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/djumanoff/gotodo/pkg/cqrses"
 	http_helper "github.com/djumanoff/gotodo/pkg/http-helper"
+	"github.com/djumanoff/gotodo/pkg/utils"
 	"io/ioutil"
 	"net/http"
 )
@@ -45,6 +46,10 @@ func (fac *httpHandlerFactory) CreateTodo() http_helper.Handler {
 func (fac *httpHandlerFactory) GetTodos() http_helper.Handler {
 	return func(r *http.Request) http_helper.Response {
 		cmd := &CommandGetTodos{}
+		query := &TodoQuery{}
+		lparams := utils.ParseFromRequest(r, query)
+		cmd.Query = query
+		cmd.ListParams = lparams
 		_, todos, err := fac.cmder.Exec(cmd)
 		if err != nil {
 			return fac.errSys.BadRequest(30, err.Error())

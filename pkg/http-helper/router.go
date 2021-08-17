@@ -14,6 +14,7 @@ type Resource interface {
 type Router struct {
 	Mux    chi.Router
 	Config Config
+	mw     OutputMiddleware
 }
 
 func (r *Router) AddResource(pattern string, resource Resource) {
@@ -26,6 +27,22 @@ func (r *Router) Prefix(prefix string, router *Router) {
 
 func (r *Router) Healthers(healthers ...Healther) {
 	r.Mux.Get("/_health", healthHandler(healthers...))
+}
+
+func (r *Router) Get(prefix string, fn Handler) {
+	r.Mux.Get(prefix, r.mw(fn))
+}
+
+func (r *Router) Post(prefix string, fn Handler) {
+	r.Mux.Post(prefix, r.mw(fn))
+}
+
+func (r *Router) Put(prefix string, fn Handler) {
+	r.Mux.Put(prefix, r.mw(fn))
+}
+
+func (r *Router) Delete(prefix string, fn Handler) {
+	r.Mux.Delete(prefix, r.mw(fn))
 }
 
 func NewRouter(cfg Config) *Router {
@@ -45,5 +62,11 @@ func NewRouter(cfg Config) *Router {
 	r.Mux.Use(prometheusMiddleware)
 	r.Mux.Use(rateLimitter(lmt))
 
+	return r
+}
+
+func NewRouterWithOutput(cfg Config, mw OutputMiddleware) *Router {
+	r := NewRouter(cfg)
+	r.mw = mw
 	return r
 }

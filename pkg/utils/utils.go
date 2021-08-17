@@ -18,6 +18,23 @@ type ListParams struct {
 	OrderAsc     bool
 }
 
+func (params ListParams) SQLOrderAndPaging() string {
+	q := ""
+	if params.OrderField != "" {
+		q += "ORDER BY " + params.OrderField
+		if params.OrderAsc {
+			q += " ASC"
+		} else {
+			q += " DESC"
+		}
+	}
+	if params.ItemsPerPage > 0 {
+		q += " LIMIT " + strconv.Itoa(params.ItemsPerPage)
+		q += " OFFSET " + strconv.Itoa(params.ItemsPerPage*params.Page)
+	}
+	return q
+}
+
 func ParseFromRequest(r *http.Request, query interface{}) *ListParams {
 	var ipp, p int
 	var err error

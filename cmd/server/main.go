@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/didip/tollbooth"
 	"github.com/djumanoff/gotodo/pkg/config"
 	"github.com/djumanoff/gotodo/pkg/cqrses"
 	hh "github.com/djumanoff/gotodo/pkg/http-helper"
@@ -55,7 +54,8 @@ func main() {
 
 // Config struct for server command
 type Config struct {
-	Addr string `envconfig:"addr" mapstructure:"addr" default:":8080"`
+	Addr      string `envconfig:"addr" mapstructure:"addr" default:":8080"`
+	RateLimit int64  `envconfig:"rate_limit" mapstructure:"rate_limit" default:"1"`
 }
 
 func (cfg *Config) load(c *cli.Context) {
@@ -78,15 +78,17 @@ func run(c *cli.Context) error {
 	cfg.load(c)
 
 	lg := logger.New()
+	mw := hh.HttpMiddlewareFactory{}
 
 	// init config for http server
 	hhCfg := hh.Config{
 		GracefulTimeout: 3 * time.Second,
 		ShutdownTimeout: 3 * time.Second,
 		Addr:            cfg.Addr,
+		RateLimit:       cfg.RateLimit,
 		Logger:          lg,
 	}
-	router := hh.NewRouter(hhCfg)
+	router := hh.NewRouterWithOutput(hhCfg, mw.JSON)
 
 	repo := todo.NewMockRepo()
 	cmder := cqrses.NewCommandHandler(todo.NewService(repo))
@@ -95,13 +97,10 @@ func run(c *cli.Context) error {
 	errSys := hh.NewErrorSystem("TODO")
 
 	fac := todo.NewHttpHandlerFactory(cmder, errSys)
-	mw := hh.HttpMiddlewareFactory{RateLimitter: tollbooth.NewLimiter(1, nil)}
-
-	// init global middleware
-	router.Mux.Use(mw.RateLimit)
 
 	// init routes
-	router.Mux.Get("/todos", mw.JSON(fac.GetTodos()))
+	router.Get("/todos", fac.GetTodos())
+	router.Post("/todos", fac.CreateTodo())
 
 	// init health checks
 	router.Healthers(repo)
