@@ -6,6 +6,7 @@ import (
 	hh "github.com/djumanoff/gotodo/pkg/http-helper"
 	"github.com/djumanoff/gotodo/pkg/logger"
 	"github.com/djumanoff/gotodo/pkg/todo"
+	"github.com/djumanoff/gotodo/pkg/todo/sqlite"
 	"github.com/urfave/cli/v2"
 	"log"
 	"os"
@@ -54,8 +55,10 @@ func main() {
 
 // Config struct for server command
 type Config struct {
-	Addr      string `envconfig:"addr" mapstructure:"addr" default:":8080"`
-	RateLimit int64  `envconfig:"rate_limit" mapstructure:"rate_limit" default:"1"`
+	Addr           string `envconfig:"addr" mapstructure:"addr" default:":8080"`
+	RateLimit      int64  `envconfig:"rate_limit" mapstructure:"rate_limit" default:"1"`
+	DBFile         string `envconfig:"db_file" mapstructure:"db_file" default:"db.sqlite"`
+	MigrationsFile string `envconfig:"migrations_file" mapstructure:"migrations_file" default:""`
 }
 
 func (cfg *Config) load(c *cli.Context) {
@@ -90,7 +93,13 @@ func run(c *cli.Context) error {
 	}
 	router := hh.NewRouterWithOutput(hhCfg, mw.JSON)
 
-	repo := todo.NewMockRepo()
+	repo, err := sqlite.NewRepository(sqlite.Config{
+		DbName:         "todos",
+		FilePath:       cfg.DBFile,
+		MigrationsFile: cfg.MigrationsFile,
+	})
+	must(err)
+
 	cmder := cqrses.NewCommandHandler(todo.NewService(repo))
 
 	// init error system
@@ -101,6 +110,7 @@ func run(c *cli.Context) error {
 	// init routes
 	router.Get("/todos", fac.GetTodos())
 	router.Post("/todos", fac.CreateTodo())
+	router.Get("/todos/{id}", fac.GetTodo("id"))
 
 	// init health checks
 	router.Healthers(repo)
@@ -112,4 +122,10 @@ func run(c *cli.Context) error {
 		time.Sleep(3 * time.Second)
 		lg.Logger.Info("cleanup finished")
 	})
+}
+
+func must(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
