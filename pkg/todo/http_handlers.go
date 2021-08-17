@@ -5,14 +5,18 @@ import (
 	"github.com/djumanoff/gotodo/pkg/cqrses"
 	http_helper "github.com/djumanoff/gotodo/pkg/http-helper"
 	"github.com/djumanoff/gotodo/pkg/utils"
+	"github.com/go-chi/chi"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 )
 
 type HttpHandlerFactory interface {
 	CreateTodo() http_helper.Handler
 
 	GetTodos() http_helper.Handler
+
+	GetTodo(idParam string) http_helper.Handler
 }
 
 func NewHttpHandlerFactory(cmder cqrses.CommandHandler, errSys http_helper.ErrorSystem) HttpHandlerFactory {
@@ -53,6 +57,24 @@ func (fac *httpHandlerFactory) GetTodos() http_helper.Handler {
 		_, todos, err := fac.cmder.Exec(cmd)
 		if err != nil {
 			return fac.errSys.BadRequest(30, err.Error())
+		}
+		return http_helper.OK(todos)
+	}
+}
+
+func (fac *httpHandlerFactory) GetTodo(idParam string) http_helper.Handler {
+	return func(r *http.Request) http_helper.Response {
+		idStr := chi.URLParam(r, idParam)
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			return fac.errSys.BadRequest(20, err.Error())
+		}
+		cmd := &CommandGetTodoByID{ID: id}
+		_, todos, err := fac.cmder.Exec(cmd)
+		if err == ErrTodoNotFound {
+			return fac.errSys.NotFound(30, err.Error())
+		} else if err != nil {
+			return fac.errSys.BadRequest(40, err.Error())
 		}
 		return http_helper.OK(todos)
 	}

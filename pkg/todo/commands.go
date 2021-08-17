@@ -25,6 +25,15 @@ type CommandGetTodos struct {
 }
 
 func (cmd *CommandGetTodos) Exec(svc interface{}) ([]cqrses.Event, interface{}, error) {
-	todo, err := svc.(Service).GetTodos(cmd.Query, cmd.ListParams)
+	todos, err := svc.(Service).GetTodos(cmd.Query, cmd.ListParams)
+	return nil, todos, err
+}
+
+type CommandGetTodoByID struct {
+	ID int64
+}
+
+func (cmd *CommandGetTodoByID) Exec(svc interface{}) ([]cqrses.Event, interface{}, error) {
+	todo, err := svc.(Service).GetTodo(cmd.ID)
 	return nil, todo, err
 }

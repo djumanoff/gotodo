@@ -30,7 +30,7 @@ func (params ListParams) SQLOrderAndPaging() string {
 	}
 	if params.ItemsPerPage > 0 {
 		q += " LIMIT " + strconv.Itoa(params.ItemsPerPage)
-		q += " OFFSET " + strconv.Itoa(params.ItemsPerPage*params.Page)
+		q += " OFFSET " + strconv.Itoa(params.ItemsPerPage*(params.Page-1))
 	}
 	return q
 }
@@ -65,11 +65,13 @@ func ParseFromRequest(r *http.Request, query interface{}) *ListParams {
 	lp.OrderAsc = true
 
 	orderField := r.URL.Query().Get("order")
-	if orderField[0] == '-' {
-		lp.OrderAsc = false
-		lp.OrderField = orderField[1:]
-	} else {
-		lp.OrderField = orderField
+	if orderField != "" {
+		if orderField[0] == '-' {
+			lp.OrderAsc = false
+			lp.OrderField = orderField[1:]
+		} else {
+			lp.OrderField = orderField
+		}
 	}
 
 	return lp

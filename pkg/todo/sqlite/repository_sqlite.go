@@ -6,13 +6,15 @@ import (
 	"github.com/djumanoff/gotodo/pkg/utils"
 	"github.com/golang-migrate/migrate/v4"
 	sqlite "github.com/golang-migrate/migrate/v4/database/sqlite3"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/mattn/go-sqlite3"
 	"strings"
 )
 
 type Config struct {
-	FilePath string
-	DbName   string
+	FilePath       string
+	DbName         string
+	MigrationsFile string
 }
 
 type sqliteDb struct {
@@ -28,14 +30,11 @@ func NewRepository(cfg Config) (todo.Repository, error) {
 	if err != nil {
 		return nil, err
 	}
-	m, err := migrate.NewWithDatabaseInstance("file:///migrations", cfg.DbName, driver)
+	m, err := migrate.NewWithDatabaseInstance("file://"+cfg.MigrationsFile, cfg.DbName, driver)
 	if err != nil {
 		return nil, err
 	}
-	err = m.Steps(2)
-	if err != nil {
-		return nil, err
-	}
+	_ = m.Steps(2)
 	return &sqliteDb{db}, nil
 }
 
