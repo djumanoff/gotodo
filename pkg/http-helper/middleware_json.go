@@ -11,18 +11,18 @@ func (fac *HttpMiddlewareFactory) JSON(handler Handler) http.HandlerFunc {
 		data, err := json.Marshal(resp.Response())
 		if err != nil {
 			_, err = w.Write([]byte("{}"))
-			if err == nil {
+			if err != nil {
 				return
 			}
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(resp.StatusCode())
 		_, err = w.Write(data)
-		if err == nil {
+		if err != nil {
 			return
 		}
-		w.WriteHeader(resp.StatusCode())
 	}
 	return fn
 }

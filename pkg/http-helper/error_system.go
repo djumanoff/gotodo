@@ -29,6 +29,7 @@ func (sys httpErrorSystem) NewError(code int, status int, message string) Error 
 	err := &HttpError{}
 	err.Code = code
 	err.Status = status
+	err.System = sys.system
 	err.statusCode = err.Status
 	err.Message = err.System + "/" +
 		strconv.Itoa(err.Status) + "/" +

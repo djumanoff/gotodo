@@ -1,6 +1,7 @@
 package http_helper
 
 import (
+	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"net/http"
@@ -18,6 +19,7 @@ func newResponseWriter(w http.ResponseWriter) *responseWriter {
 
 func (rw *responseWriter) WriteHeader(code int) {
 	rw.statusCode = code
+	fmt.Println("code=", code)
 	rw.ResponseWriter.WriteHeader(code)
 }
 
