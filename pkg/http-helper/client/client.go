@@ -18,13 +18,13 @@ type Config struct {
 
 	// Exponential Backoff Retry strategy
 	InitialTimeout int     `envconfig:"initial_timeout" defualt:"2"` // 2ms
-	MaxTimeout     int     `envconfig:"max_timeout" default:"1000"`  // 1s
+	MaxTimeout     int     `envconfig:"max_timeout" default:"5000"`  // 1s
 	ExponentFactor float64 `envconfig:"exponent_factor" default:"2"` // Multiplier
 	MaxJitter      int     `envconfig:"max_jitter" default:"2"`      // 2ms (it should be more than 1ms)
 	RetryCount     int     `envconfig:"retry_count" default:"4"`
 }
 
-func NewRetryer(cfg Config) heimdall.Retriable {
+func newRetryer(cfg Config) heimdall.Retriable {
 	initTimeout := time.Duration(cfg.InitialTimeout) * time.Millisecond
 	maxTimeout := time.Duration(cfg.MaxTimeout) * time.Millisecond
 	maxJitter := time.Duration(cfg.MaxJitter) * time.Millisecond
@@ -38,7 +38,7 @@ func NewRetryer(cfg Config) heimdall.Retriable {
 }
 
 // TODO Create client from a factory with different type of clients
-func NewClient(service string, cfg Config, client heimdall.Doer) *hystrix.Client {
+func New(service string, cfg Config, client heimdall.Doer) *hystrix.Client {
 	timeout := time.Duration(cfg.HttpTimeout) * time.Millisecond
 	if client != nil {
 		timeout = 0 * time.Millisecond
@@ -54,7 +54,7 @@ func NewClient(service string, cfg Config, client heimdall.Doer) *hystrix.Client
 		hystrix.WithSleepWindow(cfg.Sleep),
 		hystrix.WithRequestVolumeThreshold(cfg.RequestThreshold),
 		hystrix.WithHTTPClient(client),
-		hystrix.WithRetrier(NewRetryer(cfg)),
+		hystrix.WithRetrier(newRetryer(cfg)),
 		hystrix.WithRetryCount(cfg.RetryCount),
 	)
 	return clt

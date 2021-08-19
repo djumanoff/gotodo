@@ -7,10 +7,10 @@ type EventPublisher interface {
 type (
 	kafkaPublisher struct{}
 
-	kafkaConfig struct{}
+	KafkaConfig struct{}
 )
 
-func NewKafkaPublisher(cfg kafkaConfig) EventPublisher {
+func NewKafkaPublisher(cfg KafkaConfig) EventPublisher {
 	return &kafkaPublisher{}
 }
 

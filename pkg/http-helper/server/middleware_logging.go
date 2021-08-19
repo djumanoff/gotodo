@@ -2,7 +2,6 @@ package server
 
 import (
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
@@ -11,18 +10,15 @@ import (
 func WithLogging(log *zap.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
-			var fields []zap.Field
-			for name, values := range r.Header {
-				fields = append(fields, zap.Field{
-					Key:    name,
-					String: values[0],
-					Type:   zapcore.StringType,
-				})
-			}
+			//var fields []zap.Field
+			//for name, values := range r.Header {
+			//	fields = append(fields, zap.String("req_"+name, values[0]))
+			//}
 			rec := httptest.NewRecorder()
 			next.ServeHTTP(rec, r)
 
-			dump, _ := httputil.DumpResponse(rec.Result(), false)
+			dumpResp, _ := httputil.DumpResponse(rec.Result(), false)
+			dumpReq, _ := httputil.DumpRequest(r, true)
 
 			// we copy the captured response headers to our new response
 			for k, v := range rec.Header() {
@@ -32,18 +28,15 @@ func WithLogging(log *zap.Logger) func(http.Handler) http.Handler {
 			// grab the captured response body
 			data := rec.Body.Bytes()
 			w.WriteHeader(rec.Result().StatusCode)
-			w.Write(data)
+			_, _ = w.Write(data)
 
-			fields = append(fields, zap.Field{
-				Key:    "method",
-				String: r.Method,
-				Type:   zapcore.StringType,
-			}, zap.Field{
-				Key:    "url",
-				String: r.URL.String(),
-				Type:   zapcore.StringType,
-			})
-			log.Debug(string(dump)+" <::> "+string(data), fields...)
+			//fields = append(fields,
+			//	zap.String("method", r.Method),
+			//	zap.String("url", r.URL.String()),
+			//	zap.Int("response_size", n),
+			//)
+			log.Debug("", zap.String("request", string(dumpReq)), zap.String("response", string(dumpResp)))
+			//log.Debug(string(dumpResp)+" <::> "+string(data), fields...)
 		}
 		return http.HandlerFunc(fn)
 	}

@@ -61,6 +61,8 @@ type Config struct {
 	DBFile         string `envconfig:"db_file" mapstructure:"db_file" default:"db.sqlite"`
 	MigrationsFile string `envconfig:"migrations_file" mapstructure:"migrations_file" default:""`
 	LogLevel       string `envconfig:"log_level" mapstructure:"log_level" default:"debug"`
+	System         string `envconfig:"system" mapstructure:"system" default:"TODO"`
+	Hostname       string `envconfig:"hostname" mapstructure:"hostname" default:"localhost"`
 }
 
 func (cfg *Config) load(c *cli.Context) {
@@ -84,6 +86,8 @@ func run(c *cli.Context) error {
 
 	lg := logger.New()
 	lg.SetLevel(cfg.LogLevel)
+	lg.Logger = lg.Logger.With("system", cfg.System, "hostname", cfg.Hostname)
+
 	mw := server.HttpMiddlewareFactory{}
 
 	// init config for http server
@@ -103,7 +107,10 @@ func run(c *cli.Context) error {
 	})
 	must(err)
 
-	cmder := cqrses.NewCommandHandler(todo.NewService(repo))
+	cmder := cqrses.NewPublishingCommandHandler(
+		cqrses.NewKafkaPublisher(cqrses.KafkaConfig{}),
+		cqrses.NewCommandHandler(todo.NewService(repo)),
+	)
 
 	// init error system
 	errSys := hh.NewErrorSystem("TODO")
