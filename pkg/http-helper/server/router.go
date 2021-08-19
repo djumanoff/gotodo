@@ -1,4 +1,4 @@
-package http_helper
+package server
 
 import (
 	"github.com/didip/tollbooth"
@@ -54,8 +54,8 @@ func NewRouter(cfg Config) *Router {
 		timeout = 5 * time.Second
 	}
 
+	r.Mux.Use(WithLogging(cfg.Logger.Logger.Desugar()))
 	r.Mux.Use(chiMiddleware.RequestID)
-	//r.Mux.Use(middleware.Logger(logger.L()))
 	r.Mux.Use(chiMiddleware.StripSlashes)
 	r.Mux.Use(chiMiddleware.Recoverer)
 	r.Mux.Use(chiMiddleware.Timeout(timeout))

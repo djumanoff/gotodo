@@ -4,6 +4,7 @@ import (
 	"github.com/djumanoff/gotodo/pkg/config"
 	"github.com/djumanoff/gotodo/pkg/cqrses"
 	hh "github.com/djumanoff/gotodo/pkg/http-helper"
+	"github.com/djumanoff/gotodo/pkg/http-helper/server"
 	"github.com/djumanoff/gotodo/pkg/logger"
 	"github.com/djumanoff/gotodo/pkg/todo"
 	"github.com/djumanoff/gotodo/pkg/todo/sqlite"
@@ -59,6 +60,7 @@ type Config struct {
 	RateLimit      int64  `envconfig:"rate_limit" mapstructure:"rate_limit" default:"1"`
 	DBFile         string `envconfig:"db_file" mapstructure:"db_file" default:"db.sqlite"`
 	MigrationsFile string `envconfig:"migrations_file" mapstructure:"migrations_file" default:""`
+	LogLevel       string `envconfig:"log_level" mapstructure:"log_level" default:"debug"`
 }
 
 func (cfg *Config) load(c *cli.Context) {
@@ -81,17 +83,18 @@ func run(c *cli.Context) error {
 	cfg.load(c)
 
 	lg := logger.New()
-	mw := hh.HttpMiddlewareFactory{}
+	lg.SetLevel(cfg.LogLevel)
+	mw := server.HttpMiddlewareFactory{}
 
 	// init config for http server
-	hhCfg := hh.Config{
+	hhCfg := server.Config{
 		GracefulTimeout: 3 * time.Second,
 		ShutdownTimeout: 3 * time.Second,
 		Addr:            cfg.Addr,
 		RateLimit:       cfg.RateLimit,
 		Logger:          lg,
 	}
-	router := hh.NewRouterWithOutput(hhCfg, mw.JSON)
+	router := server.NewRouterWithOutput(hhCfg, mw.JSON)
 
 	repo, err := sqlite.NewRepository(sqlite.Config{
 		DbName:         "todos",
@@ -117,7 +120,7 @@ func run(c *cli.Context) error {
 
 	// start http server with cleanup function
 	// to close db connections, files, queues etc.
-	return hh.Listen(hhCfg, router, func() {
+	return server.Listen(hhCfg, router, func() {
 		lg.Logger.Info("cleanup func called")
 		time.Sleep(3 * time.Second)
 		lg.Logger.Info("cleanup finished")

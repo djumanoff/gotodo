@@ -3,13 +3,14 @@ package auth
 import (
 	"context"
 	"github.com/djumanoff/gotodo/pkg/http-helper"
+	"github.com/djumanoff/gotodo/pkg/http-helper/server"
 	"github.com/golang-jwt/jwt"
 	"net/http"
 	"strings"
 )
 
 type MiddlewareFactory interface {
-	JWTParser(handler http_helper.Handler) http_helper.Handler
+	JWTParser(handler server.Handler) server.Handler
 }
 
 type auth struct {
@@ -21,7 +22,7 @@ func NewAuthMW(pubKey string, errSys http_helper.ErrorSystem) MiddlewareFactory 
 	return &auth{pubKey: pubKey, errSys: errSys}
 }
 
-func (auth *auth) JWTParser(handler http_helper.Handler) http_helper.Handler {
+func (auth *auth) JWTParser(handler server.Handler) server.Handler {
 	return func(r *http.Request) http_helper.Response {
 		header := r.Header.Get("Authorization")
 		if header == "" {

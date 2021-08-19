@@ -83,7 +83,6 @@ func (db *sqliteDb) Create(item *todo.Todo) (int64, error) {
 }
 
 func (db *sqliteDb) FindAll(query *todo.TodoQuery, params *utils.ListParams) ([]*todo.Todo, error) {
-	var todos []*todo.Todo
 	q := "SELECT id, title, body, status, owner_id FROM todos"
 	var parts []string
 	var values []interface{}
@@ -96,11 +95,11 @@ func (db *sqliteDb) FindAll(query *todo.TodoQuery, params *utils.ListParams) ([]
 		q += strings.Join(parts, " AND ")
 	}
 	q += params.SQLOrderAndPaging()
-
 	rows, err := db.db.Query(q, values...)
 	if err != nil {
 		return nil, err
 	}
+	var todos = make([]*todo.Todo, 0, params.ItemsPerPage)
 	for rows.Next() {
 		item := &todo.Todo{}
 		err = rows.Scan(&item.ID, &item.Title, &item.Body, &item.Status, &item.OwnerID)

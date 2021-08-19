@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/djumanoff/gotodo/pkg/cqrses"
 	http_helper "github.com/djumanoff/gotodo/pkg/http-helper"
+	"github.com/djumanoff/gotodo/pkg/http-helper/server"
 	"github.com/djumanoff/gotodo/pkg/utils"
 	"github.com/go-chi/chi"
 	"io/ioutil"
@@ -12,11 +13,11 @@ import (
 )
 
 type HttpHandlerFactory interface {
-	CreateTodo() http_helper.Handler
+	CreateTodo() server.Handler
 
-	GetTodos() http_helper.Handler
+	GetTodos() server.Handler
 
-	GetTodo(idParam string) http_helper.Handler
+	GetTodo(idParam string) server.Handler
 }
 
 func NewHttpHandlerFactory(cmder cqrses.CommandHandler, errSys http_helper.ErrorSystem) HttpHandlerFactory {
@@ -28,7 +29,7 @@ type httpHandlerFactory struct {
 	errSys http_helper.ErrorSystem
 }
 
-func (fac *httpHandlerFactory) CreateTodo() http_helper.Handler {
+func (fac *httpHandlerFactory) CreateTodo() server.Handler {
 	return func(r *http.Request) http_helper.Response {
 		cmd := &CommandCreateTodo{}
 		d, err := ioutil.ReadAll(r.Body)
@@ -47,7 +48,7 @@ func (fac *httpHandlerFactory) CreateTodo() http_helper.Handler {
 	}
 }
 
-func (fac *httpHandlerFactory) GetTodos() http_helper.Handler {
+func (fac *httpHandlerFactory) GetTodos() server.Handler {
 	return func(r *http.Request) http_helper.Response {
 		cmd := &CommandGetTodos{}
 		query := &TodoQuery{}
@@ -62,7 +63,7 @@ func (fac *httpHandlerFactory) GetTodos() http_helper.Handler {
 	}
 }
 
-func (fac *httpHandlerFactory) GetTodo(idParam string) http_helper.Handler {
+func (fac *httpHandlerFactory) GetTodo(idParam string) server.Handler {
 	return func(r *http.Request) http_helper.Response {
 		idStr := chi.URLParam(r, idParam)
 		id, err := strconv.ParseInt(idStr, 10, 64)
