@@ -1,17 +1,16 @@
-package sqlite
+package todo
 
 import (
 	"database/sql"
-	"github.com/djumanoff/gotodo/pkg/todo"
-	"github.com/djumanoff/gotodo/pkg/utils"
 	"github.com/golang-migrate/migrate/v4"
 	sqlite "github.com/golang-migrate/migrate/v4/database/sqlite3"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/l00p8/utils"
 	_ "github.com/mattn/go-sqlite3"
 	"strings"
 )
 
-type Config struct {
+type SqliteConfig struct {
 	FilePath       string
 	DbName         string
 	MigrationsFile string
@@ -21,7 +20,7 @@ type sqliteDb struct {
 	db *sql.DB
 }
 
-func NewRepository(cfg Config) (todo.Repository, error) {
+func NewSqliteRepository(cfg SqliteConfig) (Repository, error) {
 	db, err := sql.Open("sqlite3", cfg.FilePath)
 	if err != nil {
 		return nil, err
@@ -38,7 +37,7 @@ func NewRepository(cfg Config) (todo.Repository, error) {
 	return &sqliteDb{db}, nil
 }
 
-func (db *sqliteDb) Update(upd *todo.TodoUpdate) error {
+func (db *sqliteDb) Update(upd *TodoUpdate) error {
 	q := "UPDATE todos SET "
 	var parts []string
 	var values []interface{}
@@ -55,7 +54,7 @@ func (db *sqliteDb) Update(upd *todo.TodoUpdate) error {
 		values = append(values, *upd.Status)
 	}
 	if len(parts) == 0 {
-		return todo.ErrNothingToUpdate
+		return ErrNothingToUpdate
 	}
 	q += strings.Join(parts, ", ")
 	q += " WHERE id = ?"
@@ -67,7 +66,7 @@ func (db *sqliteDb) Update(upd *todo.TodoUpdate) error {
 	return nil
 }
 
-func (db *sqliteDb) Create(item *todo.Todo) (int64, error) {
+func (db *sqliteDb) Create(item *Todo) (int64, error) {
 	ret, err := db.db.Exec("INSERT INTO todos (title, body, status, owner_id) VALUES (?, ?, ?, ?)", item.Title, item.Body, item.Status, item.OwnerID)
 	if err != nil {
 		return 0, err
@@ -77,12 +76,12 @@ func (db *sqliteDb) Create(item *todo.Todo) (int64, error) {
 		return 0, err
 	}
 	if id == 0 {
-		return 0, todo.ErrTodoCreation
+		return 0, ErrTodoCreation
 	}
 	return id, nil
 }
 
-func (db *sqliteDb) FindAll(query *todo.TodoQuery, params *utils.ListParams) ([]*todo.Todo, error) {
+func (db *sqliteDb) FindAll(query *TodoQuery, params *utils.ListParams) ([]*Todo, error) {
 	q := "SELECT id, title, body, status, owner_id FROM todos"
 	var parts []string
 	var values []interface{}
@@ -99,9 +98,9 @@ func (db *sqliteDb) FindAll(query *todo.TodoQuery, params *utils.ListParams) ([]
 	if err != nil {
 		return nil, err
 	}
-	var todos = make([]*todo.Todo, 0, params.ItemsPerPage)
+	var todos = make([]*Todo, 0, params.ItemsPerPage)
 	for rows.Next() {
-		item := &todo.Todo{}
+		item := &Todo{}
 		err = rows.Scan(&item.ID, &item.Title, &item.Body, &item.Status, &item.OwnerID)
 		if err != nil {
 			return nil, err
@@ -111,13 +110,14 @@ func (db *sqliteDb) FindAll(query *todo.TodoQuery, params *utils.ListParams) ([]
 	return todos, nil
 }
 
-func (db *sqliteDb) FindById(id int64) (*todo.Todo, error) {
-	item := &todo.Todo{}
+// FindById(id int64) (*Todo, error)
+func (db *sqliteDb) FindById(id int64) (*Todo, error) {
+	item := &Todo{}
 	item.ID = id
 	err := db.db.QueryRow("SELECT title, body, status, owner_id FROM todos WHERE id = ?", id).
 		Scan(&item.Title, &item.Body, &item.Status, &item.OwnerID)
 	if err == sql.ErrNoRows {
-		return nil, todo.ErrTodoNotFound
+		return nil, ErrTodoNotFound
 	} else if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func rowsAffected(ret sql.Result) error {
 		return err
 	}
 	if n == 0 {
-		return todo.ErrTodoNotFound
+		return ErrTodoNotFound
 	}
 	return nil
 }

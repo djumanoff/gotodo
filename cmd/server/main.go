@@ -1,14 +1,14 @@
 package main
 
 import (
-	"github.com/djumanoff/gotodo/pkg/config"
-	"github.com/djumanoff/gotodo/pkg/cqrses"
-	hh "github.com/djumanoff/gotodo/pkg/http-helper"
-	"github.com/djumanoff/gotodo/pkg/http-helper/server"
-	"github.com/djumanoff/gotodo/pkg/logger"
 	"github.com/djumanoff/gotodo/pkg/todo"
-	"github.com/djumanoff/gotodo/pkg/todo/sqlite"
-	"github.com/urfave/cli/v2"
+	config "github.com/l00p8/cfg"
+	"github.com/l00p8/cqrses"
+	hh "github.com/l00p8/http-server"
+	logger "github.com/l00p8/log"
+	"github.com/l00p8/utils"
+	"github.com/urfave/cli"
+	"go.uber.org/zap"
 	"log"
 	"os"
 	"time"
@@ -16,7 +16,7 @@ import (
 
 var (
 	// commands and flags of the cli
-	commands = []*cli.Command{
+	commands = []cli.Command{
 		{
 			Name:    "server",
 			Aliases: []string{"run"},
@@ -25,17 +25,15 @@ var (
 			Flags: []cli.Flag{
 				&cli.StringFlag{
 					Name:    "config",
-					Aliases: []string{"c"},
 					Usage:   "Load configuration from .env file",
 					Value:   "",
-					EnvVars: []string{"CONFIG", "CFG"},
+					EnvVar: "CONFIG",
 				},
 				&cli.StringFlag{
 					Name:    "address",
-					Aliases: []string{"a"},
 					Usage:   "run http server on specified address",
 					Value:   "",
-					EnvVars: []string{"ADDR"},
+					EnvVar: "ADDR",
 				},
 			},
 		},
@@ -84,37 +82,39 @@ func run(c *cli.Context) error {
 	// init config
 	cfg.load(c)
 
-	lg := logger.New()
-	lg.SetLevel(cfg.LogLevel)
-	lg.Logger = lg.Logger.With("system", cfg.System, "hostname", cfg.Hostname)
+	lg, err := logger.NewLogger(cfg.LogLevel, zap.String("system", cfg.System), zap.String("hostname", cfg.Hostname))
+	must(err)
+	logFac := logger.NewFactory(lg)
 
-	mw := server.HttpMiddlewareFactory{}
+	mw := hh.HttpMiddlewareFactory{}
 
 	// init config for http server
-	hhCfg := server.Config{
+	hhCfg := hh.Config{
 		GracefulTimeout: 3 * time.Second,
 		ShutdownTimeout: 3 * time.Second,
 		Addr:            cfg.Addr,
 		RateLimit:       cfg.RateLimit,
-		Logger:          lg,
+		Logger:          logFac,
 	}
-	router := server.NewRouterWithOutput(hhCfg, mw.JSON)
+	router := hh.NewHandlerRouter(
+		hh.NewRouterWithTracing(hh.NewRouter(hhCfg)),
+		mw.JSON,
+	)
 
-	repo, err := sqlite.NewRepository(sqlite.Config{
+	repo, err := todo.NewSqliteRepository(todo.SqliteConfig{
 		DbName:         "todos",
 		FilePath:       cfg.DBFile,
 		MigrationsFile: cfg.MigrationsFile,
 	})
 	must(err)
 
-	cmder := cqrses.NewPublishingCommandHandler(
+	cmder := cqrses.NewCommandHandlerWithPublisher(
 		cqrses.NewKafkaPublisher(cqrses.KafkaConfig{}),
 		cqrses.NewCommandHandler(todo.NewService(repo)),
 	)
 
 	// init error system
-	errSys := hh.NewErrorSystem("TODO")
-
+	errSys := utils.NewErrorSystem("TODO")
 	fac := todo.NewHttpHandlerFactory(cmder, errSys)
 
 	// init routes
@@ -127,10 +127,10 @@ func run(c *cli.Context) error {
 
 	// start http server with cleanup function
 	// to close db connections, files, queues etc.
-	return server.Listen(hhCfg, router, func() {
-		lg.Logger.Info("cleanup func called")
+	return hh.Listen(hhCfg, router, func() {
+		lg.Info("cleanup func called")
 		time.Sleep(3 * time.Second)
-		lg.Logger.Info("cleanup finished")
+		lg.Info("cleanup finished")
 	})
 }
 

@@ -1,8 +1,8 @@
 package todo
 
 import (
-	"github.com/djumanoff/gotodo/pkg/cqrses"
-	"github.com/djumanoff/gotodo/pkg/utils"
+	"github.com/l00p8/cqrses"
+	"github.com/l00p8/utils"
 )
 
 type CommandCreateTodo struct {

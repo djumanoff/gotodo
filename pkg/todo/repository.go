@@ -1,7 +1,7 @@
 package todo
 
 import (
-	"github.com/djumanoff/gotodo/pkg/utils"
+	"github.com/l00p8/utils"
 )
 
 type Repository interface {

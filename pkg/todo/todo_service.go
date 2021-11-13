@@ -1,6 +1,6 @@
 package todo
 
-import "github.com/djumanoff/gotodo/pkg/utils"
+import "github.com/l00p8/utils"
 
 type Service interface {
 	NewTodo(title string, body string) (*Todo, error)
