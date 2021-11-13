@@ -1,4 +1,4 @@
-module github.com/l00p8/todo
+module github.com/djumanoff/gotodo/pkg/todo
 
 go 1.16
 
