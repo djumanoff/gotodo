@@ -1,13 +1,15 @@
 package todo
 
-import "github.com/l00p8/utils"
+import (
+	"github.com/l00p8/l00p8"
+)
 
 type Service interface {
 	NewTodo(title string, body string) (*Todo, error)
 
 	Done(id int64) error
 
-	GetTodos(query *TodoQuery, params *utils.ListParams) ([]*Todo, error)
+	GetTodos(query *TodoQuery, params *l00p8.ListParams) ([]*Todo, error)
 
 	GetTodo(id int64) (*Todo, error)
 }
@@ -45,7 +47,7 @@ func (svc *defaultSvc) Done(id int64) error {
 	return nil
 }
 
-func (svc *defaultSvc) GetTodos(query *TodoQuery, params *utils.ListParams) ([]*Todo, error) {
+func (svc *defaultSvc) GetTodos(query *TodoQuery, params *l00p8.ListParams) ([]*Todo, error) {
 	return svc.repo.FindAll(query, params)
 }
 

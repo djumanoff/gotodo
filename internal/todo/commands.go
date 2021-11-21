@@ -2,7 +2,7 @@ package todo
 
 import (
 	"github.com/l00p8/cqrses"
-	"github.com/l00p8/utils"
+	"github.com/l00p8/l00p8"
 )
 
 type CommandCreateTodo struct {
@@ -21,7 +21,7 @@ func (cmd *CommandCreateTodo) Exec(svc interface{}) ([]cqrses.Event, interface{}
 
 type CommandGetTodos struct {
 	Query      *TodoQuery
-	ListParams *utils.ListParams
+	ListParams *l00p8.ListParams
 }
 
 func (cmd *CommandGetTodos) Exec(svc interface{}) ([]cqrses.Event, interface{}, error) {

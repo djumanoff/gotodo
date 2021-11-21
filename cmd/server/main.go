@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/djumanoff/gotodo/pkg/todo"
+	"github.com/djumanoff/gotodo/internal/todo"
 	config "github.com/l00p8/cfg"
 	"github.com/l00p8/cqrses"
-	hh "github.com/l00p8/http-server"
+	"github.com/l00p8/l00p8"
 	logger "github.com/l00p8/log"
-	"github.com/l00p8/utils"
+	hh "github.com/l00p8/xserver"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 	"log"
@@ -86,8 +86,6 @@ func run(c *cli.Context) error {
 	must(err)
 	logFac := logger.NewFactory(lg)
 
-	mw := hh.HttpMiddlewareFactory{}
-
 	// init config for http server
 	hhCfg := hh.Config{
 		GracefulTimeout: 3 * time.Second,
@@ -96,9 +94,9 @@ func run(c *cli.Context) error {
 		RateLimit:       cfg.RateLimit,
 		Logger:          logFac,
 	}
-	router := hh.NewHandlerRouter(
+	router := l00p8.NewHandlerRouter(
 		hh.NewRouterWithTracing(hh.NewRouter(hhCfg)),
-		mw.JSON,
+		l00p8.JSON,
 	)
 
 	repo, err := todo.NewSqliteRepository(todo.SqliteConfig{
@@ -114,7 +112,7 @@ func run(c *cli.Context) error {
 	)
 
 	// init error system
-	errSys := utils.NewErrorSystem("TODO")
+	errSys := l00p8.NewErrorSystem("TODO")
 	fac := todo.NewHttpHandlerFactory(cmder, errSys)
 
 	// init routes
@@ -129,7 +127,7 @@ func run(c *cli.Context) error {
 	// to close db connections, files, queues etc.
 	return hh.Listen(hhCfg, router, func() {
 		lg.Info("cleanup func called")
-		time.Sleep(3 * time.Second)
+		time.Sleep(1 * time.Second)
 		lg.Info("cleanup finished")
 	})
 }

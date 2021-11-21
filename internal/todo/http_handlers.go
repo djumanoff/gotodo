@@ -4,32 +4,31 @@ import (
 	"encoding/json"
 	"github.com/go-chi/chi"
 	"github.com/l00p8/cqrses"
-	server "github.com/l00p8/http-server"
-	"github.com/l00p8/utils"
+	"github.com/l00p8/l00p8"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 )
 
 type HttpHandlerFactory interface {
-	CreateTodo() server.Handler
+	CreateTodo() l00p8.Handler
 
-	GetTodos() server.Handler
+	GetTodos() l00p8.Handler
 
-	GetTodo(idParam string) server.Handler
+	GetTodo(idParam string) l00p8.Handler
 }
 
-func NewHttpHandlerFactory(cmder cqrses.CommandHandler, errSys utils.ErrorSystem) HttpHandlerFactory {
+func NewHttpHandlerFactory(cmder cqrses.CommandHandler, errSys l00p8.ErrorSystem) HttpHandlerFactory {
 	return &httpHandlerFactory{cmder, errSys}
 }
 
 type httpHandlerFactory struct {
 	cmder  cqrses.CommandHandler
-	errSys utils.ErrorSystem
+	errSys l00p8.ErrorSystem
 }
 
-func (fac *httpHandlerFactory) CreateTodo() server.Handler {
-	return func(r *http.Request) utils.Response {
+func (fac *httpHandlerFactory) CreateTodo() l00p8.Handler {
+	return func(r *http.Request) l00p8.Response {
 		cmd := &CommandCreateTodo{}
 		d, err := ioutil.ReadAll(r.Body)
 		if err != nil {
@@ -43,27 +42,27 @@ func (fac *httpHandlerFactory) CreateTodo() server.Handler {
 		if err != nil {
 			return fac.errSys.BadRequest(30, err.Error())
 		}
-		return utils.Created(todo)
+		return l00p8.Created(todo)
 	}
 }
 
-func (fac *httpHandlerFactory) GetTodos() server.Handler {
-	return func(r *http.Request) utils.Response {
+func (fac *httpHandlerFactory) GetTodos() l00p8.Handler {
+	return func(r *http.Request) l00p8.Response {
 		cmd := &CommandGetTodos{}
 		query := &TodoQuery{}
-		lparams := utils.ParseFromRequest(r, query)
+		lparams := l00p8.ParseFromRequest(r, query)
 		cmd.Query = query
 		cmd.ListParams = lparams
 		_, todos, err := fac.cmder.Exec(cmd)
 		if err != nil {
 			return fac.errSys.BadRequest(30, err.Error())
 		}
-		return utils.OK(todos)
+		return l00p8.OK(todos)
 	}
 }
 
-func (fac *httpHandlerFactory) GetTodo(idParam string) server.Handler {
-	return func(r *http.Request) utils.Response {
+func (fac *httpHandlerFactory) GetTodo(idParam string) l00p8.Handler {
+	return func(r *http.Request) l00p8.Response {
 		idStr := chi.URLParam(r, idParam)
 		id, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
@@ -76,6 +75,6 @@ func (fac *httpHandlerFactory) GetTodo(idParam string) server.Handler {
 		} else if err != nil {
 			return fac.errSys.BadRequest(40, err.Error())
 		}
-		return utils.OK(todos)
+		return l00p8.OK(todos)
 	}
 }

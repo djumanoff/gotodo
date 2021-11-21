@@ -1,7 +1,7 @@
 package todo
 
 import (
-	"github.com/l00p8/utils"
+	"github.com/l00p8/l00p8"
 )
 
 type Repository interface {
@@ -9,7 +9,7 @@ type Repository interface {
 
 	Create(todo *Todo) (int64, error)
 
-	FindAll(query *TodoQuery, params *utils.ListParams) ([]*Todo, error)
+	FindAll(query *TodoQuery, params *l00p8.ListParams) ([]*Todo, error)
 
 	FindById(id int64) (*Todo, error)
 

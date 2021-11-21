@@ -5,7 +5,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	sqlite "github.com/golang-migrate/migrate/v4/database/sqlite3"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	"github.com/l00p8/utils"
+	"github.com/l00p8/l00p8"
 	_ "github.com/mattn/go-sqlite3"
 	"strings"
 )
@@ -81,7 +81,7 @@ func (db *sqliteDb) Create(item *Todo) (int64, error) {
 	return id, nil
 }
 
-func (db *sqliteDb) FindAll(query *TodoQuery, params *utils.ListParams) ([]*Todo, error) {
+func (db *sqliteDb) FindAll(query *TodoQuery, params *l00p8.ListParams) ([]*Todo, error) {
 	q := "SELECT id, title, body, status, owner_id FROM todos"
 	var parts []string
 	var values []interface{}
